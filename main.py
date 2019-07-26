@@ -13,21 +13,27 @@ def mean_squared_error(truth, pred):
 class Network(ABC):
 
     def __init__(self, layers=None):
+        self.layers = []
         if layers is not None:
-            self.layers = layers
-        else:
-            self.layers = []
+            [self.add_layer(i) for i in layers]
 
     def describe(self):
         for i, layer in enumerate(self.layers):
             print(f'L{i}:\t{layer.describe()}')
+
+    def add_layer(self, size):
+        # Add layer of specified size to right of network
+        if len(self.layers) > 0:
+            inshape = self.layers[-1].size
+        else:
+            inshape = size
+        self.layers.append(Layer([Neuron(inshape) for i in range(size)]))
 
     def feed_forward(self, inputs):
         # Forward propagate inputs through each layer in net
         outs = inputs
         for layer in self.layers:
             outs = layer.forward(outs)
-            print(len(outs))
         return outs
 
 
@@ -38,7 +44,11 @@ class Layer(ABC):
             self.neurons = neurons
         else:
             self.neurons = []
-    
+
+    @property
+    def size(self):
+        return len(self.neurons)
+
     def describe(self):
         desc = ''
         for i, neuron in enumerate(self.neurons):
@@ -67,7 +77,7 @@ class Neuron(ABC):
 
     def activate(self, inputs):
         # Activate neuron with given inputs
-        assert(self.size) == len(inputs))
+        assert(self.size == len(inputs))
         activation = self.__bias
         activation += sum([self.__weights[i] * inputs[i] 
             for i, _ in enumerate(inputs)]) 
