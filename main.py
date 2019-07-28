@@ -54,6 +54,16 @@ class Network(ABC):
                     # Hidden layers have complex error func
                     neuron.calc_hidden_delta(self.layers[-i+1].neurons, j)
     
+    def update_weights(self, inputs, learn_rate):
+        """Update weights in network for given inputs"""
+        for i, layer in enumerate(self.layers):
+            if i != 0:
+                # If hidden layer, use outputs of previous layer
+                inputs = [neuron.last_activation for neuron in self.layers[i-1].neurons]
+            for neuron in layer.neurons:
+                neuron.update(inputs, learn_rate) 
+
+
 
 class Layer(ABC):
 
@@ -98,6 +108,14 @@ class Neuron(ABC):
     @property
     def weights(self):
         return self.__weights
+    
+    @property
+    def bias(self):
+        return self.__bias
+    
+    @property
+    def last_activation(self):
+        return self.__last_activation
 
     @property
     def delta(self):
@@ -105,6 +123,7 @@ class Neuron(ABC):
 
     def describe(self):
         return f"{', '.join([str(x) for x in self.__weights])} + {self.__bias}"
+
     def activate(self, inputs):
         # Activate neuron with given inputs
         assert(self.size == len(inputs))
@@ -127,5 +146,11 @@ class Neuron(ABC):
         for node in downstream_neurons:
             error += (node.weights[mypos] * node.delta)
             self.__delta = error * relu_prime(self.__last_activation)
-        
+    
+    def update(self, inputs, learn_rate):
+        """Update weights and bias"""
+        for j, inp in enumerate(inputs):
+            self.__weights[j] += learn_rate * self.delta * inp
+        self.__bias += learn_rate * self.delta
+
 
