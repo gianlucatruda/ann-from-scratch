@@ -42,6 +42,7 @@ class Network(ABC):
 
     def backprop(self, targets):
         """Backpropagate error and update weights/bias"""
+        sum_error = 0.0
         for i in range(1, len(self.layers) + 1):
             # Move from last layer backwards
             layer = self.layers[-i]
@@ -49,11 +50,12 @@ class Network(ABC):
                 # Calculate error and delta for each neuron in the layer
                 if i == 1:
                     # Output layer has simple error func
-                    neuron.calc_output_delta(targets[j])
+                    sum_error += neuron.calc_output_delta(targets[j])
                 else:
                     # Hidden layers have complex error func
-                    neuron.calc_hidden_delta(self.layers[-i+1].neurons, j)
-    
+                    sum_error += neuron.calc_hidden_delta(self.layers[-i+1].neurons, j)
+        return sum_error
+
     def update_weights(self, inputs, learn_rate):
         """Update weights in network for given inputs"""
         for i, layer in enumerate(self.layers):
@@ -66,7 +68,6 @@ class Network(ABC):
     def train(self, X, y, n_classes, learn_rate=0.5, n_epochs=3):
         """Train the network on X matrix and y vector"""
         for epoch in range(n_epochs):
-            print(f'Epoch {epoch}...')
             sum_error = 0.0
             if n_classes != self.layers[-1].size:
                 raise ValueError('Must have output neuron for each class')
@@ -81,9 +82,9 @@ class Network(ABC):
                 # One-hot encode output vector
                 expected = [0 if m != y[i] else 1 for m in range(n_classes)]
                 self.feed_forward(row)
-                #sum_error += sum([])
-                self.backprop(expected)
+                sum_error += self.backprop(expected)
                 self.update_weights(row, learn_rate)
+            print(f'Epoch: {epoch}\tError: {sum_error}')
 
 class Layer(ABC):
 
