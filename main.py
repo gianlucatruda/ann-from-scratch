@@ -63,7 +63,27 @@ class Network(ABC):
             for neuron in layer.neurons:
                 neuron.update(inputs, learn_rate) 
 
-
+    def train(self, X, y, n_classes, learn_rate=0.5, n_epochs=3):
+        """Train the network on X matrix and y vector"""
+        for epoch in range(n_epochs):
+            print(f'Epoch {epoch}...')
+            sum_error = 0.0
+            if n_classes != self.layers[-1].size:
+                raise ValueError('Must have output neuron for each class')
+            if len(X) != len(y):
+                raise ValueError('Training data and target values must be same shape')
+            width = len(X[0])
+            if self.layers[0].size != width:
+                raise ValueError('Input layer and training data must have same shape')
+            if not all([len(x) == width for x in X]):
+                raise ValueError('Training data must have consistent shape')
+            for i, row in enumerate(X):
+                # One-hot encode output vector
+                expected = [0 if m != y[i] else 1 for m in range(n_classes)]
+                self.feed_forward(row)
+                #sum_error += sum([])
+                self.backprop(expected)
+                self.update_weights(row, learn_rate)
 
 class Layer(ABC):
 
@@ -139,13 +159,15 @@ class Neuron(ABC):
         assert(self.__last_activation is not None)
         error = target - self.__last_activation
         self.__delta = error * relu_prime(self.__last_activation)
+        return error
 
     def calc_hidden_delta(self, downstream_neurons, mypos):
         """Calculate error and delta for hidden layer neuron"""
         error = 0.0
         for node in downstream_neurons:
             error += (node.weights[mypos] * node.delta)
-            self.__delta = error * relu_prime(self.__last_activation)
+        self.__delta = error * relu_prime(self.__last_activation)
+        return error
     
     def update(self, inputs, learn_rate):
         """Update weights and bias"""
