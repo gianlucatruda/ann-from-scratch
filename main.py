@@ -4,6 +4,10 @@ def relu(x):
     # Simple ReLU function
     return max(0, x)
 
+def relu_prime(x):
+    # Derivative of ReLU function
+    return 1.0 if x > 0 else 0.0
+
 def mean_squared_error(truth, pred):
     # MSE function
     assert(len(truth) == len(pred))
@@ -36,6 +40,20 @@ class Network(ABC):
             outs = layer.forward(outs)
         return outs
 
+    def backprop(self, targets):
+        """Backpropagate error and update weights/bias"""
+        for i in range(1, len(self.layers) + 1):
+            # Move from last layer backwards
+            layer = self.layers[-i]
+            for j, neuron in enumerate(layer.neurons):
+                # Calculate error and delta for each neuron in the layer
+                if i == 1:
+                    # Output layer has simple error func
+                    neuron.calc_output_delta(targets[j])
+                else:
+                    # Hidden layers have complex error func
+                    neuron.calc_hidden_delta(self.layers[-i+1].neurons, j)
+    
 
 class Layer(ABC):
 
@@ -52,7 +70,7 @@ class Layer(ABC):
     def describe(self):
         desc = ''
         for i, neuron in enumerate(self.neurons):
-            desc += f'N{i}({neuron.size}) '
+            desc += f'N{i}({neuron.describe()}) '
         return desc
 
     def forward(self, inputs):
@@ -70,17 +88,44 @@ class Neuron(ABC):
         self.__weights = [1.0 for i in range(size)]
         self.__bias = 0
         self.__act_func = act_func
+        self.__last_activation = None
+        self.__delta = None
 
     @property
     def size(self):
         return len(self.__weights)
 
+    @property
+    def weights(self):
+        return self.__weights
+
+    @property
+    def delta(self):
+        return self.__delta
+
+    def describe(self):
+        return f"{', '.join([str(x) for x in self.__weights])} + {self.__bias}"
     def activate(self, inputs):
         # Activate neuron with given inputs
         assert(self.size == len(inputs))
         activation = self.__bias
         activation += sum([self.__weights[i] * inputs[i] 
             for i, _ in enumerate(inputs)]) 
-        return self.__act_func(activation)
-
+        out = self.__act_func(activation)
+        self.__last_activation = out
+        return out
     
+    def calc_output_delta(self, target):
+        """Calculate error and delta for output layer neuron"""
+        assert(self.__last_activation is not None)
+        error = target - self.__last_activation
+        self.__delta = error * relu_prime(self.__last_activation)
+
+    def calc_hidden_delta(self, downstream_neurons, mypos):
+        """Calculate error and delta for hidden layer neuron"""
+        error = 0.0
+        for node in downstream_neurons:
+            error += (node.weights[mypos] * node.delta)
+            self.__delta = error * relu_prime(self.__last_activation)
+        
+
