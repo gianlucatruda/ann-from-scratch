@@ -1,18 +1,25 @@
 from abc import ABC
+import random
+from math import tanh
+from tqdm import tqdm
 
 def relu(x):
     # Simple ReLU function
-    return max(0, x)
+    return max(0.0, x)
 
 def relu_prime(x):
     # Derivative of ReLU function
-    return 1.0 if x > 0 else 0.0
+    return 1.0 if x > 0.0 else 0.0
 
-def mean_squared_error(truth, pred):
-    # MSE function
-    assert(len(truth) == len(pred))
-    n = len(truth)
-    return 1/n * sum([(y - x)**2 for y,x in zip(truth, pred)])
+def tanh_prime(x):
+    """Derivative of TanH func"""
+    return 1 - (tanh(x))**2
+
+# def mean_squared_error(truth, pred):
+#     # MSE function
+#     assert(len(truth) == len(pred))
+#     n = len(truth)
+#     return 1/n * sum([(y - x)**2 for y,x in zip(truth, pred)])
 
 class Network(ABC):
 
@@ -30,13 +37,16 @@ class Network(ABC):
         if len(self.layers) > 0:
             inshape = self.layers[-1].size
         else:
-            inshape = size
+            inshape = 1
         self.layers.append(Layer([Neuron(inshape) for i in range(size)]))
 
     def feed_forward(self, inputs):
-        # Forward propagate inputs through each layer in net
-        outs = inputs
-        for layer in self.layers:
+        """Forward propagate inputs through each layer in net"""
+        # Process input layer
+        outs = [n.activate([inputs[i]])
+                for i, n in enumerate(self.layers[0].neurons)]
+        # Process hidden layers
+        for layer in self.layers[1:]:
             outs = layer.forward(outs)
         return outs
 
@@ -63,9 +73,9 @@ class Network(ABC):
                 # If hidden layer, use outputs of previous layer
                 inputs = [neuron.last_activation for neuron in self.layers[i-1].neurons]
             for neuron in layer.neurons:
-                neuron.update(inputs, learn_rate) 
+                neuron.update(inputs, learn_rate)
 
-    def train(self, X, y, n_classes, learn_rate=0.5, n_epochs=3):
+    def train(self, X, y, n_classes, learn_rate=0.01, n_epochs=3):
         """Train the network on X matrix and y vector"""
         for epoch in range(n_epochs):
             sum_error = 0.0
@@ -78,13 +88,25 @@ class Network(ABC):
                 raise ValueError('Input layer and training data must have same shape')
             if not all([len(x) == width for x in X]):
                 raise ValueError('Training data must have consistent shape')
-            for i, row in enumerate(X):
+            for i, row in tqdm(enumerate(X), total=len(X)):
                 # One-hot encode output vector
                 expected = [0 if m != y[i] else 1 for m in range(n_classes)]
                 self.feed_forward(row)
-                sum_error += self.backprop(expected)
+                error = self.backprop(expected)
+                sum_error += error
                 self.update_weights(row, learn_rate)
-            print(f'Epoch: {epoch}\tError: {sum_error}')
+            print(f'Epoch: {epoch}\tError: {sum_error}\tLearn Rate:{learn_rate}')
+
+    def predict(self, x):
+        """Given a single input, predict output"""
+        self.feed_forward(x)
+        outputs = [n.last_activation for n in self.layers[-1].neurons]
+        return outputs
+
+    def test(self, X, y):
+        """Test the network on X matrix and y vector"""
+        pass
+
 
 class Layer(ABC):
 
@@ -105,7 +127,7 @@ class Layer(ABC):
         return desc
 
     def forward(self, inputs):
-        # Feed forward inputs through the layer
+        """Feed inputs through the layer"""
         outputs = []
         for neuron in self.neurons:
             outputs.append(neuron.activate(inputs))
@@ -113,11 +135,11 @@ class Layer(ABC):
 
 
 class Neuron(ABC):
-   
-    def __init__(self, size, act_func=relu):
+
+    def __init__(self, size, act_func=tanh):
         # Size is the number of neurons in previous layer / inputs
-        self.__weights = [1.0 for i in range(size)]
-        self.__bias = 0
+        self.__weights = [random.random() for i in range(size)]
+        self.__bias = 0.0
         self.__act_func = act_func
         self.__last_activation = None
         self.__delta = None
@@ -129,11 +151,11 @@ class Neuron(ABC):
     @property
     def weights(self):
         return self.__weights
-    
+
     @property
     def bias(self):
         return self.__bias
-    
+
     @property
     def last_activation(self):
         return self.__last_activation
@@ -149,17 +171,17 @@ class Neuron(ABC):
         # Activate neuron with given inputs
         assert(self.size == len(inputs))
         activation = self.__bias
-        activation += sum([self.__weights[i] * inputs[i] 
-            for i, _ in enumerate(inputs)]) 
+        activation += sum([self.__weights[i] * inputs[i]
+            for i, _ in enumerate(inputs)])
         out = self.__act_func(activation)
         self.__last_activation = out
         return out
-    
+
     def calc_output_delta(self, target):
         """Calculate error and delta for output layer neuron"""
         assert(self.__last_activation is not None)
-        error = target - self.__last_activation
-        self.__delta = error * relu_prime(self.__last_activation)
+        error = (target - self.__last_activation)**2
+        self.__delta = error * tanh_prime(self.__last_activation)
         return error
 
     def calc_hidden_delta(self, downstream_neurons, mypos):
@@ -167,13 +189,20 @@ class Neuron(ABC):
         error = 0.0
         for node in downstream_neurons:
             error += (node.weights[mypos] * node.delta)
-        self.__delta = error * relu_prime(self.__last_activation)
+        self.__delta = error * tanh_prime(self.__last_activation)
         return error
-    
+
     def update(self, inputs, learn_rate):
         """Update weights and bias"""
-        for j, inp in enumerate(inputs):
-            self.__weights[j] += learn_rate * self.delta * inp
-        self.__bias += learn_rate * self.delta
+        if self.size == 1:
+            # Treat as input layer
+            for inp in inputs:
+                self.__weights[0] += learn_rate * self.delta * inp
+            self.__bias += learn_rate * self.delta
+        else:
+            # Treat as hidden layer
+            for j, inp in enumerate(inputs):
+                self.__weights[j] += learn_rate * self.delta * inp
+            self.__bias += learn_rate * self.delta
 
 
