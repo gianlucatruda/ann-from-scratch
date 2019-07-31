@@ -17,7 +17,9 @@ def get_data_and_labels(images_filename, labels_filename, limit=None):
         data = [[None for x in range(num_of_image_values)]
                 for y in range(num_of_items)]
         labels = []
-        sample_size = limit if limit < num_of_items else num_of_items
+        if limit is None:
+            limit = num_of_items
+        sample_size = min(limit, num_of_items)
         for item in range(sample_size):
             print("Current image number: %7d" % item)
             for value in range(num_of_image_values):
