@@ -99,7 +99,7 @@ class Network(ABC):
                 sum_error += error
                 self.update_weights(row, learn_rate)
             print(
-                f'\nEpoch: {epoch}\tError: {sum_error}\tLearn Rate:{learn_rate}\n')
+                f'\rEpoch: {epoch}\tError: {sum_error}\tLearn Rate:{learn_rate}')
 
     def predict(self, x):
         """Given a single input, predict output"""
