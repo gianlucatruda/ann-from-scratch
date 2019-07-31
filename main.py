@@ -5,12 +5,12 @@ from tqdm import tqdm
 
 
 def relu(x):
-    # Simple ReLU function
+    """Simple ReLU function"""
     return max(0.0, x)
 
 
 def relu_prime(x):
-    # Derivative of ReLU function
+    """Derivative of ReLU function"""
     return 1.0 if x > 0.0 else 0.0
 
 
@@ -31,7 +31,7 @@ class Network(ABC):
             print(f'L{i}:\t{layer.describe()}')
 
     def add_layer(self, size):
-        # Add layer of specified size to right of network
+        """Add layer of specified size to right of network"""
         if len(self.layers) > 0:
             inshape = self.layers[-1].size
         else:
@@ -110,7 +110,8 @@ class Network(ABC):
     def test(self, X, y):
         """Test the network on X matrix and y vector"""
         if len(X) != len(y):
-            raise ValueError('Test set data and target values must be same length')
+            raise ValueError(
+                'Test set data and target values must be same length')
         hits, misses = [0, 0]
         for i, x in tqdm(enumerate(X), total=len(X)):
             pred_vec = self.predict(x)
@@ -127,6 +128,7 @@ class Network(ABC):
         print('\rResults--------')
         print(f'Hits:\t{hits}({hits*100/len(y)}%)')
         print(f'Misses:\t{misses}({misses*100/len(y)}%)')
+
 
 class Layer(ABC):
 
@@ -188,7 +190,7 @@ class Neuron(ABC):
         return f"{', '.join([str(x) for x in self.__weights])} + {self.__bias}"
 
     def activate(self, inputs):
-        # Activate neuron with given inputs
+        """Activate neuron with given inputs"""
         assert(self.size == len(inputs))
         activation = self.__bias
         activation += sum([self.__weights[i] * inputs[i]
