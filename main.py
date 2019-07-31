@@ -3,23 +3,21 @@ import random
 from math import tanh
 from tqdm import tqdm
 
+
 def relu(x):
     # Simple ReLU function
     return max(0.0, x)
+
 
 def relu_prime(x):
     # Derivative of ReLU function
     return 1.0 if x > 0.0 else 0.0
 
+
 def tanh_prime(x):
     """Derivative of TanH func"""
     return 1 - (tanh(x))**2
 
-# def mean_squared_error(truth, pred):
-#     # MSE function
-#     assert(len(truth) == len(pred))
-#     n = len(truth)
-#     return 1/n * sum([(y - x)**2 for y,x in zip(truth, pred)])
 
 class Network(ABC):
 
@@ -63,7 +61,8 @@ class Network(ABC):
                     sum_error += neuron.calc_output_delta(targets[j])
                 else:
                     # Hidden layers have complex error func
-                    sum_error += neuron.calc_hidden_delta(self.layers[-i+1].neurons, j)
+                    sum_error += neuron.calc_hidden_delta(
+                        self.layers[-i+1].neurons, j)
         return sum_error
 
     def update_weights(self, inputs, learn_rate):
@@ -71,7 +70,8 @@ class Network(ABC):
         for i, layer in enumerate(self.layers):
             if i != 0:
                 # If hidden layer, use outputs of previous layer
-                inputs = [neuron.last_activation for neuron in self.layers[i-1].neurons]
+                inputs = [
+                    neuron.last_activation for neuron in self.layers[i-1].neurons]
             for neuron in layer.neurons:
                 neuron.update(inputs, learn_rate)
 
@@ -82,12 +82,15 @@ class Network(ABC):
             if n_classes != self.layers[-1].size:
                 raise ValueError('Must have output neuron for each class')
             if len(X) != len(y):
-                raise ValueError('Training data and target values must be same shape')
+                raise ValueError(
+                    'Training data and target values must be same shape')
             width = len(X[0])
             if self.layers[0].size != width:
-                raise ValueError('Input layer and training data must have same shape')
+                raise ValueError(
+                    'Input layer and training data must have same shape')
             if not all([len(x) == width for x in X]):
                 raise ValueError('Training data must have consistent shape')
+
             for i, row in tqdm(enumerate(X), total=len(X)):
                 # One-hot encode output vector
                 expected = [0 if m != y[i] else 1 for m in range(n_classes)]
@@ -95,7 +98,8 @@ class Network(ABC):
                 error = self.backprop(expected)
                 sum_error += error
                 self.update_weights(row, learn_rate)
-            print(f'Epoch: {epoch}\tError: {sum_error}\tLearn Rate:{learn_rate}')
+            print(
+                f'Epoch: {epoch}\tError: {sum_error}\tLearn Rate:{learn_rate}')
 
     def predict(self, x):
         """Given a single input, predict output"""
@@ -172,7 +176,7 @@ class Neuron(ABC):
         assert(self.size == len(inputs))
         activation = self.__bias
         activation += sum([self.__weights[i] * inputs[i]
-            for i, _ in enumerate(inputs)])
+                           for i, _ in enumerate(inputs)])
         out = self.__act_func(activation)
         self.__last_activation = out
         return out
@@ -204,5 +208,3 @@ class Neuron(ABC):
             for j, inp in enumerate(inputs):
                 self.__weights[j] += learn_rate * self.delta * inp
             self.__bias += learn_rate * self.delta
-
-
