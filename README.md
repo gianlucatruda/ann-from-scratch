@@ -8,39 +8,15 @@ Able to demonstrate learning on [MNIST dataset](http://yann.lecun.com/exdb/mnist
 
 ## Process
 
-Okay, I need some technical understanding about how an ANN works. I'm making a classifier here that takes in MNIST digits as input. The MNIST digits are 28x28 "images", so I'll have $28 * 28 = 784$ input neurons and 10 output neurons (one for each digit).
-
-### Basic Neural Net
-
-For a simple 3-layer NN:
-$y = f_{NN}(x) = f_3(\mathbf{f}_2(\mathbf{f}_1(x)))$
-
-Where $f_1$ and $f_2$ are vector functions of the form:
-$\mathbf{f}_l(\mathbf{z}) = \mathbf{g}_l(\mathbf{W}_l\mathbf{z} + \mathbf{b}_l)$
-
-* $\mathbf{g}_l$ is the activation function. This should be a differentiable, non-linear function so that our NN is able to approximate non-linear functions. e.g. TanH and ReLU.
-* $\mathbf{W}_l$ is a matrix representing the weights for that layer.
-* $\mathbf{b}_l$ is a vector representing the biases for that layer.
-* $\mathbf{W}_l$ and $\mathbf{b}_l$ are learned using gradient descent and optimising for some loss function.
-
-### Gradient Descent
+Okay, I need some technical understanding about how an ANN works. I'm making a classifier here that takes in MNIST digits as input. The MNIST digits are 28x28 "images", so I'll have 784 input neurons and 10 output neurons (one for each digit).
 
 >During gradient descent, the neural network’s parameters receive an update proportional to the partial derivative of the cost function with respect to the current parameter in each iteration of training. — Andriy Burkov
 
-Loss function: Mean Squared Error (MSE)
-$l = \frac{1}{N} \sum_{i=1}^{N}{(y_i - (wx_i + b))^2}$
+GD works in **epochs**. In each epoch, you run the whole training set through the network and update the parameters. We initialise the weights and biases to some random values at the beginning of the first epoch. At each epoch, we update them in each node/connection using the partial derivatives with respect to the loss function. We control the learning rate to adjust the sizes of the updates.
 
-GD works in **epochs**. In each epoch, you run the whole training set through the network and update the parameters. We initialise the weights ($w$) and biases ($b$) to zero at the beginning of the first epoch. At each epoch, we update $w$ and $b$ in each node/connection using the partial derivatives with respect to the loss function. We control the learning rate ($\alpha$) to adjust the sizes of the updates.
-
-In reality, we'd want to use something like minibatch stochastic gradient descent to increase performance and robustness.
-
-### Backpropagation
+In reality, we'd want to use something like minibatch stochastic gradient descent to increase performance and robustness
 
 > Backpropagation is an efficient algorithm for computing gradients on neural networks using the chain rule. — Andriy Burkov
-
-For $y=g(x)$ and $z=f(g(x)) = f(y)$, the **chain rule** states:
-$\frac{dz}{dx} = \frac{dz}{dy}\frac{dy}{dx}$
-
 
 ### ANN Learning Algorithm
 
