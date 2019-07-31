@@ -99,7 +99,7 @@ class Network(ABC):
                 sum_error += error
                 self.update_weights(row, learn_rate)
             print(
-                f'Epoch: {epoch}\tError: {sum_error}\tLearn Rate:{learn_rate}')
+                f'\nEpoch: {epoch}\tError: {sum_error}\tLearn Rate:{learn_rate}\n')
 
     def predict(self, x):
         """Given a single input, predict output"""
@@ -109,8 +109,24 @@ class Network(ABC):
 
     def test(self, X, y):
         """Test the network on X matrix and y vector"""
-        pass
-
+        if len(X) != len(y):
+            raise ValueError('Test set data and target values must be same length')
+        hits, misses = [0, 0]
+        for i, x in tqdm(enumerate(X), total=len(X)):
+            pred_vec = self.predict(x)
+            pred_val = -100
+            pred_loc = 0
+            for j in range(len(pred_vec)):
+                if pred_vec[j] > pred_val:
+                    pred_loc = j
+                    pred_val = pred_vec[j]
+            if (pred_loc + 1) == y[i]:
+                hits += 1
+            else:
+                misses += 1
+        print('\rResults--------')
+        print(f'Hits:\t{hits}({hits*100/len(y)}%)')
+        print(f'Misses:\t{misses}({misses*100/len(y)}%)')
 
 class Layer(ABC):
 
@@ -184,7 +200,7 @@ class Neuron(ABC):
     def calc_output_delta(self, target):
         """Calculate error and delta for output layer neuron"""
         assert(self.__last_activation is not None)
-        error = (target - self.__last_activation)**2
+        error = (target - self.__last_activation)
         self.__delta = error * tanh_prime(self.__last_activation)
         return error
 
